@@ -82,7 +82,7 @@ const ReportService = {
         } catch (e) {
             console.error(e);
             this.hideLoading();
-            alert('Error generando o subiendo el reporte: ' + e.message);
+            this.showToast('Error generando o subiendo: ' + e.message, 'error');
         }
     },
 
@@ -344,7 +344,7 @@ const ReportService = {
         } catch (e) {
             console.error(e);
             this.hideLoading();
-            alert('Error: ' + e.message);
+            this.showToast('Error: ' + e.message, 'error');
         }
     },
 
@@ -588,6 +588,52 @@ const ReportService = {
     },
 
     // --- UI Helpers ---
+    showToast(msg, type = 'success') {
+        let toast = document.getElementById('report-toast');
+        if (toast) toast.remove();
+
+        toast = document.createElement('div');
+        toast.id = 'report-toast';
+        const color = type === 'success' ? '#10b981' : '#ef4444';
+        const icon = type === 'success' ? '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-exclamation-circle"></i>';
+
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1f2937;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 11000;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            border-left: 4px solid ${color};
+            font-family: sans-serif;
+            font-size: 0.95rem;
+        `;
+        toast.innerHTML = `${icon} <span>${msg}</span>`;
+        document.body.appendChild(toast);
+
+        // Animate in
+        requestAnimationFrame(() => {
+            toast.style.transform = 'translateX(-50%) translateY(0)';
+            toast.style.opacity = '1';
+        });
+
+        // Hide after 3s
+        setTimeout(() => {
+            toast.style.transform = 'translateX(-50%) translateY(100px)';
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    },
+
     showLoading(msg) {
         let overlay = document.getElementById('report-loading');
         if (!overlay) {
@@ -601,6 +647,8 @@ const ReportService = {
         overlay.style.display = 'flex';
     },
 
+    // ... existing updateLoading/hideLoading ... 
+
     updateLoading(msg) {
         const el = document.getElementById('report-msg');
         if (el) el.innerText = msg;
@@ -613,14 +661,12 @@ const ReportService = {
 
     showLinkModal(url) {
         let modal = document.getElementById('report-link-modal');
-        // Re-create modal if it exists to refresh styles (simple way)
         if (modal) modal.remove();
 
         modal = document.createElement('div');
         modal.id = 'report-link-modal';
         modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:10000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px);';
 
-        // Dark theme inspired modal
         modal.innerHTML = `
             <div style="background:#1e1e1e; padding:2rem; border-radius:12px; max-width:90%; width:400px; text-align:center; color:#eee; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border:1px solid #333;">
                 <div style="margin-bottom:1.5rem;">
@@ -643,7 +689,7 @@ const ReportService = {
                 <div style="display:flex; gap:10px; justify-content:stretch;">
                     <button id="btn-copy-main"
                         style="flex:1; background:#2d2d2d; border:1px solid #444; color:#fff; padding:10px; border-radius:6px; cursor:pointer; font-weight:500; transition:all 0.2s;">
-                        <i class="fas fa-copy"></i> Copiar
+                        <i class="fas fa-copy"></i> Copiar enlace
                     </button>
                     <button onclick="document.getElementById('report-link-modal').style.display='none'" 
                         style="flex:1; background:#ef4444; border:none; color:white; padding:10px; border-radius:6px; cursor:pointer; font-weight:500; transition:all 0.2s;">
@@ -654,28 +700,27 @@ const ReportService = {
         `;
         document.body.appendChild(modal);
 
-        // Hover effects simple logic
+        // Hover
         const btns = modal.querySelectorAll('button');
         btns.forEach(btn => {
             btn.onmouseover = () => { if (btn.id !== 'copy-btn-input' && btn.id !== 'btn-copy-main') btn.style.filter = 'brightness(1.2)'; }
             btn.onmouseout = () => { if (btn.id !== 'copy-btn-input' && btn.id !== 'btn-copy-main') btn.style.filter = 'brightness(1)'; }
         });
 
-        // Copy Logic Helper
+        // Copy Helper
         const doCopy = () => {
             const input = document.getElementById('report-url-input');
             input.select();
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(input.value)
-                    .then(() => alert('Enlace copiado al portapapeles'))
-                    .catch(() => alert('No se pudo copiar automáticamente. Intenta seleccionarlo.'));
+                    .then(() => ReportService.showToast('Enlace copiado al portapapeles', 'success'))
+                    .catch(() => ReportService.showToast('No se pudo copiar automáticamente', 'error'));
             } else {
                 document.execCommand('copy');
-                alert('Enlace copiado al portapapeles');
+                ReportService.showToast('Enlace copiado al portapapeles', 'success');
             }
         };
 
-        // Attach to both
         modal.querySelector('#copy-btn-input').onclick = doCopy;
         modal.querySelector('#btn-copy-main').onclick = doCopy;
 
