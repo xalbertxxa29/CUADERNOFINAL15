@@ -633,22 +633,17 @@ const ReportService = {
                     <div style="display:flex; background:#2d2d2d; border-radius:6px; border:1px solid #444; overflow:hidden;">
                         <input type="text" id="report-url-input" readonly 
                             style="flex:1; background:transparent; border:none; color:#fff; padding:10px 12px; font-size:0.9rem; outline:none;" />
-                        <button id="copy-btn" 
+                        <button id="copy-btn-input" 
                             style="background:#3b82f6; color:white; border:none; padding:0 15px; cursor:pointer; font-weight:500; transition:background 0.2s;">
                             <i class="fas fa-copy"></i>
                         </button>
                     </div>
-                    <!-- Tooltip "Copiado" feedback -->
-                    <div id="copy-feedback" style="position:absolute; top:-30px; right:0; background:#10b981; color:white; font-size:0.8rem; padding:4px 8px; border-radius:4px; opacity:0; transition:opacity 0.3s; pointer-events:none;">
-                        ¡Copiado!
-                        <div style="position:absolute; bottom:-4px; right:10px; width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-top:4px solid #10b981;"></div>
-                    </div>
                 </div>
                 
                 <div style="display:flex; gap:10px; justify-content:stretch;">
-                    <button onclick="window.open(document.getElementById('report-url-input').value, '_blank')" 
+                    <button id="btn-copy-main"
                         style="flex:1; background:#2d2d2d; border:1px solid #444; color:#fff; padding:10px; border-radius:6px; cursor:pointer; font-weight:500; transition:all 0.2s;">
-                        <i class="fas fa-external-link-alt"></i> Abrir
+                        <i class="fas fa-copy"></i> Copiar
                     </button>
                     <button onclick="document.getElementById('report-link-modal').style.display='none'" 
                         style="flex:1; background:#ef4444; border:none; color:white; padding:10px; border-radius:6px; cursor:pointer; font-weight:500; transition:all 0.2s;">
@@ -662,29 +657,27 @@ const ReportService = {
         // Hover effects simple logic
         const btns = modal.querySelectorAll('button');
         btns.forEach(btn => {
-            btn.onmouseover = () => { if (btn.id !== 'copy-btn') btn.style.filter = 'brightness(1.2)'; }
-            btn.onmouseout = () => { if (btn.id !== 'copy-btn') btn.style.filter = 'brightness(1)'; }
+            btn.onmouseover = () => { if (btn.id !== 'copy-btn-input' && btn.id !== 'btn-copy-main') btn.style.filter = 'brightness(1.2)'; }
+            btn.onmouseout = () => { if (btn.id !== 'copy-btn-input' && btn.id !== 'btn-copy-main') btn.style.filter = 'brightness(1)'; }
         });
 
-        // Copy Logic
-        modal.querySelector('#copy-btn').onclick = () => {
+        // Copy Logic Helper
+        const doCopy = () => {
             const input = document.getElementById('report-url-input');
             input.select();
             if (navigator.clipboard) {
-                navigator.clipboard.writeText(input.value);
+                navigator.clipboard.writeText(input.value)
+                    .then(() => alert('Enlace copiado al portapapeles'))
+                    .catch(() => alert('No se pudo copiar automáticamente. Intenta seleccionarlo.'));
             } else {
                 document.execCommand('copy');
+                alert('Enlace copiado al portapapeles');
             }
-
-            // Show feedback
-            const feedback = document.getElementById('copy-feedback');
-            feedback.style.opacity = '1';
-            feedback.style.top = '-35px'; // slight animation
-            setTimeout(() => {
-                feedback.style.opacity = '0';
-                feedback.style.top = '-30px';
-            }, 2000);
         };
+
+        // Attach to both
+        modal.querySelector('#copy-btn-input').onclick = doCopy;
+        modal.querySelector('#btn-copy-main').onclick = doCopy;
 
         document.getElementById('report-url-input').value = url;
     }
